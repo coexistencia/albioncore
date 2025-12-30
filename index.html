@@ -1,0 +1,528 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Grimório Final - SANCTUM SANGUINIS</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.2.0/css/all.min.css">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Cinzel+Decorative:wght@400;700;900&family=Crimson+Text:ital,wght@0,400;0,600;1,400&display=swap');
+
+        :root {
+            --bg-color: #080000;
+            --surface-color: rgba(20, 0, 0, 0.95);
+            --primary-text: #e0e0e0;
+            --secondary-text: #a66;
+            --accent-color: #ff3333;
+            --border-color: rgba(139, 0, 0, 0.5);
+            --locked-color: #1a0505;
+            --unlocked-color: #cc0000;
+            --paragon-gold: #ffd700; /* Cor exclusiva do Tier 7 */
+
+            --branch-mater: #3498db;
+            --branch-passio: #c0392b;
+            --branch-penitentia: #8e44ad;
+        }
+
+        body {
+            font-family: 'Crimson Text', serif;
+            background-color: var(--bg-color);
+            color: var(--primary-text);
+            margin: 0;
+            padding: 20px;
+            font-size: 12px;
+            background:
+                radial-gradient(circle at top, rgba(50, 0, 0, 0.4) 0%, #000000 80%),
+                url('https://www.transparenttextures.com/patterns/diagmonds-light.png');
+            background-attachment: fixed;
+        }
+
+        .container {
+            max-width: 1600px;
+            width: 95%;
+            margin: 0 auto;
+            border: 1px solid var(--border-color);
+            background: var(--surface-color);
+            backdrop-filter: blur(10px);
+            padding: 25px;
+            border-radius: 2px;
+            box-shadow: 0 0 80px rgba(100, 0, 0, 0.5);
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .container::before {
+            content: ''; position: absolute; top: 0; left: 0; width: 100%; height: 5px;
+            background: linear-gradient(90deg, transparent, var(--accent-color), transparent);
+            box-shadow: 0 0 15px var(--accent-color);
+            z-index: 2;
+        }
+
+        header {
+            text-align: center;
+            border-bottom: 1px solid #400;
+            padding-bottom: 20px;
+            margin-bottom: 20px;
+        }
+        header h1 {
+            font-family: 'Cinzel Decorative', serif;
+            font-size: 3em;
+            margin: 0;
+            color: var(--primary-text);
+            text-shadow: 0 0 10px rgba(255, 0, 0, 0.5);
+            letter-spacing: 2px;
+        }
+        header p { font-size: 1.2em; color: var(--secondary-text); font-style: italic; margin-top: 5px; }
+
+        .skill-point-tracker {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: rgba(30, 0, 0, 0.6);
+            padding: 15px 30px;
+            border: 1px solid var(--border-color);
+            margin-bottom: 30px;
+            font-family: 'Cinzel Decorative', serif;
+        }
+        .skill-point-tracker span { color: var(--accent-color); font-size: 1.2em; }
+
+        .core-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            gap: 15px;
+            margin-bottom: 40px;
+        }
+        .core-card {
+            background: linear-gradient(180deg, #1a0505 0%, #000 100%);
+            border: 1px solid #400;
+            padding: 20px;
+            text-align: center;
+            transition: 0.3s;
+        }
+        .core-card:hover { border-color: var(--accent-color); transform: translateY(-3px); }
+        .core-card h4 { color: var(--accent-color); font-family: 'Cinzel Decorative'; margin-bottom: 10px; font-size: 1.1em; }
+        .core-card p { font-size: 0.95em; color: #aaa; line-height: 1.4; margin: 0; }
+        .core-card.flaw { border-color: #800000; background: #100000; }
+        .core-card.flaw h4 { color: #ff6666; }
+
+        .skill-tree-wrapper {
+            overflow-x: auto;
+            padding-bottom: 20px;
+        }
+        .skill-tree-container {
+            display: flex;
+            gap: 20px;
+            min-width: 1200px; /* Aumentado para caber Tier 7 */
+        }
+        
+        .branch {
+            flex: 1;
+            background: rgba(10, 5, 5, 0.8);
+            border: 1px solid #333;
+            padding: 15px;
+            display: flex;
+            flex-direction: column;
+        }
+        .branch-header {
+            text-align: center;
+            font-family: 'Cinzel Decorative';
+            font-size: 1.5em;
+            padding-bottom: 10px;
+            margin-bottom: 20px;
+            border-bottom: 3px double;
+            text-transform: uppercase;
+        }
+        #branch-mater .branch-header { color: var(--branch-mater); border-color: var(--branch-mater); }
+        #branch-passio .branch-header { color: var(--branch-passio); border-color: var(--branch-passio); }
+        #branch-penitentia .branch-header { color: var(--branch-penitentia); border-color: var(--branch-penitentia); }
+
+        .tier {
+            margin-bottom: 20px;
+            border-bottom: 1px dashed rgba(255,255,255,0.1);
+            padding-bottom: 10px;
+        }
+        .tier:last-child { border: none; margin-bottom: 0; padding-bottom: 0; }
+        .tier-title { text-align: center; color: #666; font-size: 0.8em; text-transform: uppercase; letter-spacing: 2px; margin-bottom: 10px; }
+
+        /* SKILL NODE */
+        .skill-node {
+            display: flex;
+            gap: 12px;
+            margin-bottom: 10px;
+            background: rgba(0,0,0,0.5);
+            padding: 10px;
+            border: 1px solid transparent;
+            transition: 0.2s;
+            user-select: none;
+            position: relative;
+        }
+        .skill-node::before {
+            content: ''; position: absolute; left: 0; top: 0; bottom: 0; width: 3px;
+            background: #333; transition: 0.3s;
+        }
+        
+        .skill-node.available { cursor: pointer; background: rgba(50, 0, 0, 0.1); }
+        .skill-node.available:hover { background: rgba(50, 0, 0, 0.3); }
+        .skill-node.available:hover::before { background: #888; }
+        
+        .skill-node.unlocked { cursor: pointer; background: rgba(30, 5, 5, 0.8); }
+        
+        #branch-mater .skill-node.unlocked::before { background: var(--branch-mater); box-shadow: 0 0 10px var(--branch-mater); }
+        #branch-passio .skill-node.unlocked::before { background: var(--branch-passio); box-shadow: 0 0 10px var(--branch-passio); }
+        #branch-penitentia .skill-node.unlocked::before { background: var(--branch-penitentia); box-shadow: 0 0 10px var(--branch-penitentia); }
+
+        /* ESTILO ESPECIAL PARA O TIER 7 (PARAGON) */
+        .tier-7-node {
+            border: 1px solid var(--paragon-gold) !important;
+            background: linear-gradient(135deg, rgba(0,0,0,0.9), rgba(255, 215, 0, 0.1)) !important;
+            margin-top: 15px;
+        }
+        .tier-7-node h4 { color: var(--paragon-gold) !important; text-shadow: 0 0 5px var(--paragon-gold); }
+        .tier-7-node .skill-icon { border-color: var(--paragon-gold) !important; color: var(--paragon-gold) !important; }
+
+        .skill-icon {
+            width: 40px; height: 40px;
+            background: #000;
+            border: 1px solid #444;
+            display: flex; justify-content: center; align-items: center;
+            font-size: 18px; color: #666;
+            border-radius: 50% 0 50% 50%;
+            transform: rotate(-45deg);
+            flex-shrink: 0;
+            transition: 0.3s;
+        }
+        .skill-icon i { transform: rotate(45deg); }
+
+        .skill-node.unlocked .skill-icon { border-color: #fff; color: #fff; }
+        #branch-mater .skill-node.unlocked .skill-icon { background: var(--branch-mater); }
+        #branch-passio .skill-node.unlocked .skill-icon { background: var(--branch-passio); }
+        #branch-penitentia .skill-node.unlocked .skill-icon { background: var(--branch-penitentia); }
+
+        .skill-details { flex: 1; pointer-events: none; }
+        .skill-details h4 { margin: 0; font-family: 'Cinzel Decorative'; color: #ddd; font-size: 1em; display: flex; justify-content: space-between; }
+        .skill-details p { margin: 5px 0 0; color: #aaa; line-height: 1.3; font-size: 0.9em; }
+
+        .ranks { display: flex; gap: 3px; margin-top: 5px; }
+        .rank-dot { width: 6px; height: 6px; background: #222; border-radius: 50%; }
+        .skill-node.unlocked .rank-dot.filled { background: #fff; box-shadow: 0 0 5px #fff; }
+
+        .skill-bonus { color: #ff5555; font-weight: bold; font-size: 0.8em; margin-top: 3px; text-transform: uppercase; }
+
+        #file-management {
+            margin-top: 40px;
+            border-top: 1px solid #400;
+            padding-top: 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: rgba(0,0,0,0.8);
+            padding: 20px;
+        }
+        .btn-holy {
+            background: transparent;
+            border: 1px solid var(--secondary-text);
+            color: var(--secondary-text);
+            padding: 10px 20px;
+            font-family: 'Cinzel Decorative';
+            cursor: pointer;
+            transition: 0.3s;
+        }
+        .btn-holy:hover { border-color: var(--accent-color); color: var(--accent-color); box-shadow: 0 0 15px rgba(255,0,0,0.3); }
+
+        .skill-flash { animation: flash 0.5s; }
+        @keyframes flash { 0% { background: rgba(255,255,255,0.1); } 100% { background: transparent; } }
+    </style>
+</head>
+<body onload="initTree()">
+
+    <div class="container" id="main-interface">
+        <header>
+            <h1>SANCTUM SANGUINIS</h1>
+            <p>"Pelo meu sangue, vós sereis curados. Pela minha dor, vós sereis salvos."</p>
+        </header>
+
+        <div class="skill-point-tracker">
+            <div><i class="fa-solid fa-droplet"></i> Pontos de Penitência</div>
+            <div><span id="sp-current">60</span> <span style="font-size:0.7em; color:#666;">/ <span id="sp-total">60</span></span></div>
+        </div>
+
+        <div class="core-grid">
+            <div class="core-card">
+                <h4><i class="fa-solid fa-hands-bound"></i> O Manto (Proteção)</h4>
+                <p>Cria armaduras físicas feitas do próprio sangue endurecido. Protege a si e aliados.</p>
+            </div>
+            <div class="core-card">
+                <h4><i class="fa-solid fa-heart-pulse"></i> O Sacrifício (Cura)</h4>
+                <p>Curar não é mágica, é transfusão. Você doa seu próprio HP para curar outros com potência dobrada.</p>
+            </div>
+            <div class="core-card">
+                <h4><i class="fa-solid fa-fire"></i> A Paixão (Dano)</h4>
+                <p>Seu sangue ferve como metal derretido. Inimigos que te ferem se queimam.</p>
+            </div>
+            <div class="core-card flaw">
+                <h4><i class="fa-solid fa-cross"></i> Estigmas</h4>
+                <p>[Falha] Você sangra constantemente. -2 HP por turno, mas ganha bônus quando ferido.</p>
+            </div>
+        </div>
+
+        <div class="skill-tree-wrapper">
+            <div class="skill-tree-container" id="skill-tree">
+                </div>
+        </div>
+
+        <div id="file-management">
+            <h3 style="margin:0; font-family:'Cinzel Decorative'; color:#888;">Registro dos Mártires</h3>
+            <div style="display:flex; gap:10px;">
+                <button class="btn-holy" onclick="exportArvorePDF()">Exportar</button>
+                <button class="btn-holy" onclick="exportProgressoJSON()">Salvar</button>
+                <button class="btn-holy" onclick="document.getElementById('file-input').click()">Carregar</button>
+                <input type="file" id="file-input" style="display:none;" onchange="importProgressoJSON(event)">
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const skillDB = {
+            // --- RAMO 1: MÃE DAS DORES (Azul) ---
+            1: { name: "Manto de Sangue", maxRank: 5, desc: "Endurece o sangue na pele.", icon: "fa-shield-heart", prereqPoints: 0, branch: "mater", bonusPerRank: 2, bonusText: "Armadura" },
+            2: { name: "Transfusão Direta", maxRank: 1, desc: "[Ativa] Transfere 10 HP seu para um aliado.", icon: "fa-hand-holding-droplet", prereqPoints: 0, branch: "mater" },
+            3: { name: "Vitalidade Mártir", maxRank: 5, desc: "Aumenta seu HP Máximo.", icon: "fa-heart", prereqPoints: 0, branch: "mater", bonusPerRank: 10, bonusText: "HP Máx" },
+            
+            4: { name: "Intercessão", maxRank: 1, desc: "[Game Changer] Redireciona dano de um aliado para você.", icon: "fa-person-rays", prereqPoints: 5, branch: "mater" },
+            5: { name: "Sangue Purificador", maxRank: 5, desc: "Curas removem condições negativas.", icon: "fa-virus-slash", prereqPoints: 5, branch: "mater", bonusPerRank: 1, bonusText: "Condição" },
+            6: { name: "Abraço Materno", maxRank: 5, desc: "Regeneração passiva para aliados próximos.", icon: "fa-child-reaching", prereqPoints: 5, branch: "mater", bonusPerRank: 1, bonusText: "HP/Turno" },
+            
+            7: { name: "Campo de Lágrimas", maxRank: 1, desc: "[Ativa] Poça que cura aliados e retarda inimigos.", icon: "fa-water", prereqPoints: 10, branch: "mater" },
+            8: { name: "Compadecida", maxRank: 5, desc: "Cura +30% em alvos críticos (<30% HP).", icon: "fa-plus-square", prereqPoints: 10, branch: "mater", bonusPerRank: 1, bonusText: "Potência" },
+            
+            9: { name: "Assunção Carmesim", maxRank: 1, desc: "[Capstone] Forma etérea de sangue. Imune a físico.", icon: "fa-cloud", prereqPoints: 15, branch: "mater" },
+            10: { name: "Imaculada", maxRank: 5, desc: "Resistência a Veneno e Necrótico.", icon: "fa-star-of-life", prereqPoints: 15, branch: "mater", bonusPerRank: 2, bonusText: "Resistência" },
+            
+            11: { name: "Milagre da Vida", maxRank: 1, desc: "[Ultimate] Ressuscita aliado. Custa 50% do seu HP.", icon: "fa-hands-holding-child", prereqPoints: 20, branch: "mater" },
+            
+            12: { name: "Espinho Protetor", maxRank: 5, desc: "Curas concedem 'Espinhos' (Dano ao atacante) ao alvo.", icon: "fa-bahai", prereqPoints: 25, branch: "mater", bonusPerRank: 2, bonusText: "Dano Refletido" },
+            
+            13: { name: "Rainha do Céu e Terra", maxRank: 1, desc: "[Paragon] Sua cura não custa mais seu próprio HP.", icon: "fa-sun", prereqPoints: 30, branch: "mater" },
+
+            // --- RAMO 2: CORAÇÃO ARDENTE (Vermelho) ---
+            14: { name: "Lança de Longinus", maxRank: 5, desc: "Lança de sangue sólido.", icon: "fa-wand-sparkles", prereqPoints: 0, branch: "passio", bonusPerRank: 3, bonusText: "Dano Fixo" },
+            15: { name: "Veias em Chamas", maxRank: 1, desc: "[Ativa] Dano de fogo nos ataques, mas toma dano/turno.", icon: "fa-fire", prereqPoints: 0, branch: "passio" },
+            16: { name: "Oferenda Queimada", maxRank: 5, desc: "Aumenta dano de fogo geral.", icon: "fa-fire-burner", prereqPoints: 0, branch: "passio", bonusPerRank: 1, bonusText: "Dano Extra" },
+            
+            17: { name: "Flagelo", maxRank: 1, desc: "[Game Changer] Chicote de sangue. Alcance médio.", icon: "fa-bacon", prereqPoints: 5, branch: "passio" },
+            18: { name: "Combustão", maxRank: 5, desc: "Inimigos sangrando sofrem dano de fogo extra.", icon: "fa-droplet", prereqPoints: 5, branch: "passio", bonusPerRank: 2, bonusText: "Dano/Turno" },
+            19: { name: "Zelo do Mártir", maxRank: 5, desc: "Menos HP = Mais Dano.", icon: "fa-arrow-trend-up", prereqPoints: 5, branch: "passio", bonusPerRank: 1, bonusText: "Dano por 10% HP" },
+            
+            20: { name: "Explosão Cardíaca", maxRank: 1, desc: "[Ativa] Detona seu sangue em área (AOE).", icon: "fa-heart-crack", prereqPoints: 10, branch: "passio" },
+            21: { name: "Estigmas", maxRank: 5, desc: "Críticos causam explosão em área.", icon: "fa-burst", prereqPoints: 10, branch: "passio", bonusPerRank: 3, bonusText: "Dano Explosão" },
+            
+            22: { name: "Chuva de Enxofre", maxRank: 1, desc: "[Capstone] Chuva ácida de sangue fervente.", icon: "fa-cloud-rain", prereqPoints: 15, branch: "passio" },
+            23: { name: "Fúria Santa", maxRank: 5, desc: "Ganha dano a cada turno em combate.", icon: "fa-gavel", prereqPoints: 15, branch: "passio", bonusPerRank: 1, bonusText: "Dano/Turno" },
+            
+            24: { name: "Inferno Pessoal", maxRank: 1, desc: "[Ultimate] Ferve o sangue DENTRO do inimigo.", icon: "fa-skull", prereqPoints: 20, branch: "passio" },
+            
+            25: { name: "Sangue Divino", maxRank: 5, desc: "Ignora resistência a fogo de demônios/monstros.", icon: "fa-khanda", prereqPoints: 25, branch: "passio", bonusPerRank: 5, bonusText: "% Penetração" },
+            
+            26: { name: "Serafim", maxRank: 1, desc: "[Paragon] Ganha asas de sangue (Voo) e ataques radiantes.", icon: "fa-feather", prereqPoints: 30, branch: "passio" },
+
+            // --- RAMO 3: CAMINHO DO MARTÍRIO (Roxo) ---
+            27: { name: "Coroa de Espinhos", maxRank: 5, desc: "Reflete dano corpo a corpo.", icon: "fa-crown", prereqPoints: 0, branch: "penitentia", bonusPerRank: 2, bonusText: "Dano Refletido" },
+            28: { name: "Beijo de Judas", maxRank: 1, desc: "[Ativa] Marca inimigo. Dano em você vai pra ele.", icon: "fa-lips", prereqPoints: 0, branch: "penitentia" },
+            29: { name: "Endurecer pela Dor", maxRank: 5, desc: "Ganha armadura ao apanhar.", icon: "fa-hand-fist", prereqPoints: 0, branch: "penitentia", bonusPerRank: 1, bonusText: "Armadura/Hit" },
+            
+            30: { name: "Peso da Cruz", maxRank: 1, desc: "[Game Changer] Gravidade pesada. Inimigos lentos.", icon: "fa-weight-hanging", prereqPoints: 5, branch: "penitentia" },
+            31: { name: "Vínculo de Expiação", maxRank: 5, desc: "Compartilha dano com inimigos.", icon: "fa-link", prereqPoints: 5, branch: "penitentia", bonusPerRank: 5, bonusText: "% Compartilhado" },
+            32: { name: "Silêncio", maxRank: 5, desc: "Chance de falha em magias inimigas.", icon: "fa-comment-slash", prereqPoints: 5, branch: "penitentia", bonusPerRank: 5, bonusText: "% Falha" },
+            
+            33: { name: "Olhar de Penitência", maxRank: 1, desc: "[Ativa] Stun mental no inimigo.", icon: "fa-eye-slash", prereqPoints: 10, branch: "penitentia" },
+            34: { name: "Confissão", maxRank: 5, desc: "Dano extra em alvos atordoados.", icon: "fa-book-bible", prereqPoints: 10, branch: "penitentia", bonusPerRank: 2, bonusText: "Dano Extra" },
+            
+            35: { name: "Pietà", maxRank: 1, desc: "[Capstone] Postura imóvel. Imune a dano, protege aliados.", icon: "fa-person-praying", prereqPoints: 15, branch: "penitentia" },
+            36: { name: "Flagelação Mútua", maxRank: 5, desc: "Causa dano em si para ferir inimigo (Sem defesa).", icon: "fa-whip", prereqPoints: 15, branch: "penitentia", bonusPerRank: 3, bonusText: "Dano Real" },
+            
+            37: { name: "Julgamento Final", maxRank: 1, desc: "[Ultimate] Bane um inimigo por 2 turnos.", icon: "fa-door-closed", prereqPoints: 20, branch: "penitentia" },
+            
+            38: { name: "Cálice da Ira", maxRank: 5, desc: "Ao morrer, explode curando aliados e ferindo inimigos.", icon: "fa-wine-glass-empty", prereqPoints: 25, branch: "penitentia", bonusPerRank: 20, bonusText: "Potência" },
+            
+            39: { name: "Santo Sepulcro", maxRank: 1, desc: "[Paragon] Se morrer, vira estátua que cura aliados até o fim.", icon: "fa-monument", prereqPoints: 30, branch: "penitentia" },
+        };
+
+        let playerState = { totalSP: 60, skills: {} };
+
+        function getSpentPoints() { return Object.values(playerState.skills).reduce((a, b) => a + b, 0); }
+        function getPointsInBranch(branch) {
+            let count = 0;
+            for(let id in playerState.skills) {
+                if(skillDB[id].branch === branch) count += playerState.skills[id];
+            }
+            return count;
+        }
+
+        function updateUI() {
+            const spent = getSpentPoints();
+            document.getElementById('sp-current').innerText = playerState.totalSP - spent;
+            renderTree();
+        }
+
+        function handleSkillClick(e, id) {
+            e.preventDefault();
+            if(e.shiftKey) removePoint(id);
+            else addPoint(id);
+        }
+
+        function addPoint(id) {
+            if(getSpentPoints() >= playerState.totalSP) return;
+            const s = skillDB[id];
+            const current = playerState.skills[id] || 0;
+            if(current >= s.maxRank) return;
+            if(getPointsInBranch(s.branch) < s.prereqPoints) return;
+
+            playerState.skills[id] = current + 1;
+            
+            const node = document.getElementById(`node-${id}`);
+            node.classList.add('skill-flash');
+            setTimeout(()=>node.classList.remove('skill-flash'), 500);
+            
+            saveState();
+            updateUI();
+        }
+
+        function removePoint(id) {
+            const current = playerState.skills[id] || 0;
+            if(current <= 0) return;
+            
+            const branchPts = getPointsInBranch(skillDB[id].branch) - 1;
+            for(let other in playerState.skills) {
+                const s = skillDB[other];
+                if(s.branch === skillDB[id].branch && s.prereqPoints > branchPts) {
+                    alert("Não pode remover: Dependência de Tier.");
+                    return;
+                }
+            }
+
+            playerState.skills[id] = current - 1;
+            if(playerState.skills[id] === 0) delete playerState.skills[id];
+            saveState();
+            updateUI();
+        }
+
+        function generateTree() {
+            const container = document.getElementById('skill-tree');
+            container.innerHTML = '';
+            
+            const branches = {
+                mater: "Mãe das Dores",
+                passio: "Coração Ardente",
+                penitentia: "Caminho do Martírio"
+            };
+
+            for(let key in branches) {
+                const col = document.createElement('div');
+                col.className = 'branch';
+                col.id = `branch-${key}`;
+                col.innerHTML = `<div class="branch-header">${branches[key]}</div>`;
+                container.appendChild(col);
+            }
+
+            const tiered = {};
+            for(let id in skillDB) {
+                const s = skillDB[id];
+                const k = `${s.branch}-${Math.floor(s.prereqPoints/5)}`;
+                if(!tiered[k]) tiered[k] = [];
+                tiered[k].push(id);
+            }
+
+            for(let key in tiered) {
+                const [br, tierIdx] = key.split('-');
+                const div = document.createElement('div');
+                div.className = 'tier';
+                const tierNum = parseInt(tierIdx)+1;
+                div.innerHTML = `<div class="tier-title">Tier ${tierNum}</div>`;
+                
+                tiered[key].forEach(id => {
+                    const s = skillDB[id];
+                    const isParagon = tierNum === 7;
+                    div.innerHTML += `
+                        <div class="skill-node ${isParagon ? 'tier-7-node' : ''}" id="node-${id}" onclick="handleSkillClick(event, ${id})">
+                            <div class="skill-icon"><i class="fa-solid ${s.icon}"></i></div>
+                            <div class="skill-details">
+                                <h4>${s.name} <div class="ranks" id="ranks-${id}"></div></h4>
+                                <p>${s.desc}</p>
+                                <div class="skill-bonus" id="bonus-${id}"></div>
+                            </div>
+                        </div>
+                    `;
+                });
+                document.getElementById(`branch-${br}`).appendChild(div);
+            }
+        }
+
+        function renderTree() {
+            const branchPts = {
+                mater: getPointsInBranch('mater'),
+                passio: getPointsInBranch('passio'),
+                penitentia: getPointsInBranch('penitentia')
+            };
+
+            for(let id in skillDB) {
+                const s = skillDB[id];
+                const rank = playerState.skills[id] || 0;
+                const node = document.getElementById(`node-${id}`);
+                const unlocked = rank > 0;
+                const available = !unlocked && branchPts[s.branch] >= s.prereqPoints && getSpentPoints() < playerState.totalSP;
+
+                node.classList.remove('unlocked', 'available');
+                if(unlocked) node.classList.add('unlocked');
+                if(available) node.classList.add('available');
+                
+                let dots = '';
+                for(let i=0; i<s.maxRank; i++) dots += `<div class="rank-dot ${i<rank?'filled':''}"></div>`;
+                document.getElementById(`ranks-${id}`).innerHTML = dots;
+
+                const bonusDiv = document.getElementById(`bonus-${id}`);
+                if(rank > 0 && s.bonusPerRank) {
+                    bonusDiv.innerText = `+${rank * s.bonusPerRank} ${s.bonusText}`;
+                } else {
+                    bonusDiv.innerText = '';
+                }
+            }
+        }
+
+        function saveState() { localStorage.setItem('sanctum_save_v2', JSON.stringify(playerState)); }
+        function initTree() {
+            const saved = localStorage.getItem('sanctum_save_v2');
+            if(saved) playerState = JSON.parse(saved);
+            generateTree();
+            updateUI();
+        }
+
+        function exportProgressoJSON() {
+            const a = document.createElement('a');
+            a.href = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(playerState));
+            a.download = "votos_sanctum_redimido.json";
+            a.click();
+        }
+        function importProgressoJSON(e) {
+            const r = new FileReader();
+            r.onload = (ev) => {
+                playerState = JSON.parse(ev.target.result);
+                saveState(); updateUI();
+            };
+            r.readAsText(e.target.files[0]);
+        }
+        window.jsPDF = window.jspdf.jsPDF;
+        async function exportArvorePDF() {
+            document.getElementById('file-management').style.display='none';
+            const canvas = await html2canvas(document.getElementById('main-interface'), {scale:2, backgroundColor:'#080000'});
+            document.getElementById('file-management').style.display='flex';
+            const pdf = new jsPDF('l','mm','a4');
+            const w = pdf.internal.pageSize.getWidth();
+            const h = (canvas.height * w)/canvas.width;
+            pdf.addImage(canvas.toDataURL('image/png'), 'PNG', 0, 0, w, h);
+            pdf.save('Grimorio_Sanctum_Redimido.pdf');
+        }
+    </script>
+</body>
+</html>
